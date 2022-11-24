@@ -38,6 +38,8 @@ function verifyJWT(req, res, next) {
 async function run() {
     try {
         const usersCollection = client.db('furnitureWorld').collection('users');
+        const categoryCollection = client.db('furnitureWorld').collection('categories');
+        const productCollection = client.db('furnitureWorld').collection('products');
 
 
         app.get('/jwt', async (req, res) => {
@@ -51,9 +53,41 @@ async function run() {
             res.status(403).send({ assessToken: '' });
         })
 
+        app.get('/categories', async (req, res) => {
+            const query = {};
+            const result = await categoryCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/category/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { categoryID: id }
+            const result = await productCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/productCategory', async (req, res) => {
+            const quary = {}
+            const result = await categoryCollection.find(quary).project({ categoryName: 1 }).toArray();
+            res.send(result);
+        })
+
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.userType === 'admin' });
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
+
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
             res.send(result);
         })
 
