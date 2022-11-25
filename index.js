@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -41,6 +42,7 @@ async function run() {
         const categoryCollection = client.db('furnitureWorld').collection('categories');
         const productCollection = client.db('furnitureWorld').collection('products');
         const bookingCollection = client.db('furnitureWorld').collection('bookings');
+        const paymentsCollection = client.db('furnitureWorld').collection('payments');
 
 
         app.get('/jwt', async (req, res) => {
@@ -62,7 +64,7 @@ async function run() {
 
         app.get('/category/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { categoryID: id }
+            const query = { categoryID: id };
             const result = await productCollection.find(query).toArray();
             res.send(result);
         })
@@ -72,6 +74,18 @@ async function run() {
             const query = { _id: ObjectId(id) }
             const result = await productCollection.find(query).toArray();
             res.send(result);
+        })
+
+        app.get('/myproducts', async (req, res) => {
+            let query = {};
+
+            if (req.query.email) {
+                query = {
+                    sellerEmail: req.query.email
+                }
+            }
+            const products = await productCollection.find(query).toArray();
+            res.send(products);
         })
 
         app.get('/productCategory', async (req, res) => {
@@ -113,12 +127,84 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/bookings', async (req, res) => {
+            let query = {};
+
+            if (req.query.email) {
+                query = {
+                    email: req.query.email
+                }
+            }
+
+            const booking = await bookingCollection.find(query).toArray();
+            res.send(booking);
+        })
+
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const quary = { _id: ObjectId(id) };
+            const booking = await bookingCollection.findOne(quary);
+            res.send(booking);
+        })
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
         });
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const booking = req.body;
+            const price = booking.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                'payment_method_types': [
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            })
+        })
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.bookingId
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transectionId: payment.transactionId
+                }
+            }
+            const updatedResult = await bookingCollection.updateOne(filter, updatedDoc)
+            res.send(result);
+        })
+
+        app.put('/myproducts/:id', async (req, res) => {
+
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedProduct = {
+                $set: {
+                    status: 'advertised'
+                }
+            }
+            const result = await productCollection.updateOne(filter, updatedProduct, options);
+            res.send(result);
+        })
+
+        app.delete('/myproducts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(query);
+            res.send(result);
+        })
 
 
     } finally {
