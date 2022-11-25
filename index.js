@@ -87,6 +87,20 @@ async function run() {
             res.send({ isAdmin: user?.userType === 'admin' });
         })
 
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.userType === 'seller' });
+        })
+
+        app.get('/users/:userType', async (req, res) => {
+            const userType = req.params.userType;
+            const query = { userType };
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
