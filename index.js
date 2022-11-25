@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId, ObjectID } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -40,6 +40,7 @@ async function run() {
         const usersCollection = client.db('furnitureWorld').collection('users');
         const categoryCollection = client.db('furnitureWorld').collection('categories');
         const productCollection = client.db('furnitureWorld').collection('products');
+        const bookingCollection = client.db('furnitureWorld').collection('bookings');
 
 
         app.get('/jwt', async (req, res) => {
@@ -62,6 +63,13 @@ async function run() {
         app.get('/category/:id', async (req, res) => {
             const id = req.params.id;
             const query = { categoryID: id }
+            const result = await productCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
             const result = await productCollection.find(query).toArray();
             res.send(result);
         })
@@ -90,6 +98,13 @@ async function run() {
             const result = await productCollection.insertOne(product);
             res.send(result);
         })
+
+
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+        });
 
 
     } finally {
