@@ -199,6 +199,22 @@ async function run() {
             res.send(result);
         })
 
+        app.put('/myproducts/status/:id', async (req, res) => {
+
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedProduct = {
+                $set: {
+                    status: 'unlisted'
+                }
+            }
+            const result = await productCollection.updateOne(filter, updatedProduct, options);
+            res.send(result);
+        })
+
+
+
         app.delete('/myproducts/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
