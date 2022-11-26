@@ -108,6 +108,13 @@ async function run() {
             res.send({ isSeller: user?.userType === 'seller' });
         })
 
+        app.get('/verifiedseller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isVerified: user?.status === 'verified' });
+        })
+
         app.get('/users/:userType', async (req, res) => {
             const userType = req.params.userType;
             const query = { userType };
@@ -210,6 +217,34 @@ async function run() {
                 }
             }
             const result = await productCollection.updateOne(filter, updatedProduct, options);
+            res.send(result);
+        })
+
+        app.put('/seller/status/:email', async (req, res) => {
+
+            const email = req.params.email;
+            const filter = { email };
+            const options = { upsert: true };
+            const updatedProduct = {
+                $set: {
+                    status: 'unverified'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedProduct, options);
+            res.send(result);
+        })
+
+        app.put('/seller/status/verify/:email', async (req, res) => {
+
+            const email = req.params.email;
+            const filter = { email };
+            const options = { upsert: true };
+            const updatedProduct = {
+                $set: {
+                    status: 'verified'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedProduct, options);
             res.send(result);
         })
 
