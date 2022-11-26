@@ -42,6 +42,7 @@ async function run() {
         const categoryCollection = client.db('furnitureWorld').collection('categories');
         const productCollection = client.db('furnitureWorld').collection('products');
         const bookingCollection = client.db('furnitureWorld').collection('bookings');
+        const wishlistCollection = client.db('furnitureWorld').collection('wishlist');
         const paymentsCollection = client.db('furnitureWorld').collection('payments');
 
 
@@ -147,6 +148,19 @@ async function run() {
             res.send(booking);
         })
 
+        app.get('/wishlist', async (req, res) => {
+            let query = {};
+
+            if (req.query.email) {
+                query = {
+                    email: req.query.email
+                }
+            }
+
+            const wishlist = await wishlistCollection.find(query).toArray();
+            res.send(wishlist);
+        })
+
         app.get('/bookings/:id', async (req, res) => {
             const id = req.params.id;
             const quary = { _id: ObjectId(id) };
@@ -157,6 +171,12 @@ async function run() {
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+        });
+
+        app.post('/wishlist', async (req, res) => {
+            const wishlist = req.body;
+            const result = await wishlistCollection.insertOne(wishlist);
             res.send(result);
         });
 
@@ -261,6 +281,13 @@ async function run() {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await bookingCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        app.delete('/wishlist/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await wishlistCollection.deleteOne(query);
             res.send(result);
         })
 
