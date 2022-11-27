@@ -44,6 +44,7 @@ async function run() {
         const bookingCollection = client.db('furnitureWorld').collection('bookings');
         const wishlistCollection = client.db('furnitureWorld').collection('wishlist');
         const paymentsCollection = client.db('furnitureWorld').collection('payments');
+        const blogCollection = client.db('furnitureWorld').collection('blog');
 
 
         app.get('/jwt', async (req, res) => {
@@ -80,6 +81,19 @@ async function run() {
         app.get('/allproducts', async (req, res) => {
             const query = {};
             const result = await productCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/blog', async (req, res) => {
+            const query = {};
+            const result = await blogCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/blogpage/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await blogCollection.findOne(query);
             res.send(result);
         })
 
