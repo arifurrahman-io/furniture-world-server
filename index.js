@@ -260,7 +260,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/seller/status/:email', async (req, res) => {
+        app.put('/seller/status/:email', verifyJWT, async (req, res) => {
 
             const email = req.params.email;
             const filter = { email };
@@ -274,7 +274,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/seller/status/verify/:email', async (req, res) => {
+        app.put('/seller/status/verify/:email', verifyJWT, async (req, res) => {
 
             const email = req.params.email;
             const filter = { email };
@@ -282,6 +282,20 @@ async function run() {
             const updatedProduct = {
                 $set: {
                     status: 'verified'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedProduct, options);
+            res.send(result);
+        })
+
+        app.put('/user/:email', async (req, res) => {
+
+            const email = req.params.email;
+            const filter = { email };
+            const options = { upsert: true };
+            const updatedProduct = {
+                $set: {
+                    userType: 'buyer',
                 }
             }
             const result = await usersCollection.updateOne(filter, updatedProduct, options);
