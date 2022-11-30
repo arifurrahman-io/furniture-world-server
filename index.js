@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
@@ -46,6 +47,16 @@ async function run() {
         const paymentsCollection = client.db('furnitureWorld').collection('payments');
         const blogCollection = client.db('furnitureWorld').collection('blog');
 
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.userType !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            next();
+        }
 
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -57,6 +68,8 @@ async function run() {
             }
             res.status(403).send({ assessToken: '' });
         })
+
+
 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -143,18 +156,6 @@ async function run() {
             res.send(users);
         })
 
-        app.post('/users', async (req, res) => {
-            const user = req.body;
-            const result = await usersCollection.insertOne(user);
-            res.send(result);
-        })
-
-        app.post('/products', async (req, res) => {
-            const product = req.body;
-            const result = await productCollection.insertOne(product);
-            res.send(result);
-        })
-
         app.get('/bookings', async (req, res) => {
             let query = {};
 
@@ -186,6 +187,18 @@ async function run() {
             const quary = { _id: ObjectId(id) };
             const booking = await bookingCollection.findOne(quary);
             res.send(booking);
+        })
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
+
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send(result);
         })
 
         app.post('/bookings', async (req, res) => {
@@ -260,7 +273,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/seller/status/:email', verifyJWT, async (req, res) => {
+        app.put('/seller/status/:email', verifyJWT, verifyAdmin, async (req, res) => {
 
             const email = req.params.email;
             const filter = { email };
@@ -274,7 +287,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/seller/status/verify/:email', verifyJWT, async (req, res) => {
+        app.put('/seller/status/verify/:email', verifyJWT, verifyAdmin, async (req, res) => {
 
             const email = req.params.email;
             const filter = { email };
@@ -291,7 +304,9 @@ async function run() {
         app.put('/user/:email', async (req, res) => {
 
             const email = req.params.email;
-            const filter = { email };
+            const name = req.body.name;
+            const phone = req.body.phone;
+            const filter = { email, name, phone };
             const options = { upsert: true };
             const updatedProduct = {
                 $set: {
@@ -325,14 +340,14 @@ async function run() {
             res.send(result);
         })
 
-        app.delete('/client/:id', async (req, res) => {
+        app.delete('/client/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
         })
 
-        app.delete('/seller/:id', async (req, res) => {
+        app.delete('/seller/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
